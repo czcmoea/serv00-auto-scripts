@@ -14,10 +14,10 @@ async function delayTime(ms) {
   const accountsJson = fs.readFileSync('accounts.json', 'utf-8');
   const accounts = JSON.parse(accountsJson);
 
-  console.error(`accounts>> ${accountsJson}`);
-
   for (const account of accounts) {
     const { username, password, panelnum } = account;
+
+    console.log(`账号 ${username} ${password} ${panelnum}`);
 
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
