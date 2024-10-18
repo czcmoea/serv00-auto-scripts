@@ -1,0 +1,40 @@
+name: Execute SSH Commands
+
+on:
+  workflow_dispatch: # 手动触发工作流
+  schedule:
+    - cron: '7 5 */10 * *'
+
+jobs:
+  execute-commands:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSHPass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Get SSH_JSON
+        id: get-accounts
+        run: |
+          echo "$SSH_JSON" > accounts.json
+        env:
+          SSH_JSON: ${{ secrets.SSH_JSON }}
+
+      - name: Generate SSH Commands
+        id: generate-ssh-commands
+        run: |
+          echo "#!/bin/bash" > sshpass.sh
+          while IFS= read -r account; do
+            username=$(echo "$account" | jq -r '.username')
+            password=$(echo "$account" | jq -r '.password')
+            ssh=$(echo "$account" | jq -r '.ssh')
+
+            echo "echo \"Executing for \$username@\$ssh\"" >> sshpass.sh
+            echo "sshpass -p '\$password' ssh -o StrictHostKeyChecking=no '\$username@\$ssh' " >> sshpass.sh
+            
+            # 添加随机间隔
+            echo "sleep \$((RANDOM % 3 + 1))" >> sshpass.sh # 随机等待1到10秒
+          done < <(jq -c '.[]' accounts.json)
+          chmod +x sshpass.sh
+
+      - name: Execute SSH Commands
+        run: ./sshpass.sh
