@@ -30,11 +30,8 @@ jobs:
 
             echo "echo \"Executing for \$username@\$ssh\"" >> sshpass.sh
             echo "sshpass -p '\$password' ssh -o StrictHostKeyChecking=no '\$username@\$ssh' " >> sshpass.sh
-            
-            # 添加随机间隔
-            echo "sleep \$((RANDOM % 3 + 1))" >> sshpass.sh # 随机等待1到10秒
           done < <(jq -c '.[]' accounts.json)
           chmod +x sshpass.sh
 
-      - name: Execute SSH Commands
+      - name: SSH
         run: ./sshpass.sh
