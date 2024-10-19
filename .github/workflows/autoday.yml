@@ -16,20 +16,20 @@ jobs:
         env:
           DAY_JSON: ${{ secrets.DAY_JSON }}
         run: |
-          echo "" > output.log  # 清空或创建 output.log
-          echo "$DAY_JSON" | jq -c '.[]' | while read -r server; do
+          echo "" > output.log  # Clear or create output.log
+          echo "$DAY_JSON" | jq -c '.[]' | while IFS= read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
             
-            echo "Executing command on $ssh: $cmd" >> output.log  # 写入日志
+            echo "Executing command on $ssh: $cmd" >> output.log  # Log execution
             output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
             
-            echo "Output from $ssh:" >> output.log  # 写入日志
+            echo "Output from $ssh:" >> output.log  # Log output
             echo "$output" >> output.log
             
-            sleep 1  # 等待5秒，增加延迟
+            sleep 1  # Wait 1 seconds for delay
           done
       
-          cat output.log  # 在循环外部一次性打印
+          cat output.log  # Print output log
