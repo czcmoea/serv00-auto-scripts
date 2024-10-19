@@ -21,9 +21,10 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             echo "Connecting to $ssh as $username"
-            if output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'); then
-              echo "Successfully connected to $ssh: $output" | tee /dev/stderr
+            if sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'; then
+              echo "Successfully connected to $ssh"
             else
-              echo "Failed to connect to $ssh" | tee /dev/stderr
+              echo "Failed to connect to $ssh"
             fi
+            sleep 1  # 等待 1 秒
           done
