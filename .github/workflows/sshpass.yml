@@ -22,7 +22,7 @@ jobs:
             ssh=$(echo "$server" | jq -r '.ssh')
 
             echo "Executing command on $username@$ssh..."
-            # output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
 
             echo "$output"
             echo "Waiting for 5 seconds before proceeding to the next server..."
