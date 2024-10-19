@@ -16,30 +16,27 @@ jobs:
         env:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
-          execute_command() {
-            local server="$1"
-            local username
-            local password
-            local ssh
-            
+          echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
 
-            echo "Attempting to connect to $username@$ssh..."
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
+            echo "Executing command on $username@$ssh..."
+            sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" > output.log 2>&1 &
+            pid=$!
 
+            # Check if the command is running in the background
             if [[ $? -ne 0 ]]; then
-              echo "❌ Error executing command on $username@$ssh: $output"
+              echo "❌ Error starting command on $username@$ssh"
             else
-              echo "✅ Successfully executed command on $username@$ssh: $output"
+              echo "✅ Successfully started command on $username@$ssh (PID: $pid)"
             fi
-          }
-
-          echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
-            execute_command "$server"
+            
             echo "Waiting for 5 seconds before proceeding to the next server..."
             sleep 5
           done
+
+          # Wait for all background jobs to finish
+          wait
 
           echo "All commands have been executed."
