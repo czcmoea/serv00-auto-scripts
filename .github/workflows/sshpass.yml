@@ -1,7 +1,7 @@
 name: SSH
 
 on:
-  workflow_dispatch: # 手动触发工作流
+  workflow_dispatch: # Manual trigger
   schedule:
     - cron: '7 5 */30 * *'
 
@@ -16,18 +16,15 @@ jobs:
         env:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
-          # 解析 JSON 字符串并执行命令
-          while IFS= read -r server; do
+          echo "$SERVERS_JSON" | jq -c '.[]' | while read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
-            # 你的处理逻辑
-            echo "$server"
             echo "Connecting to $ssh as $username"
-            # if sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'; then
-            #   echo "Successfully connected to $ssh"
-            # else
-            #   echo "Failed to connect to $ssh"
-            # fi
-          done < <(echo "$SERVERS_JSON" | jq -c '.[]')
-
+            {
+              sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd' && \
+              echo "Successfully connected to $ssh" || \
+              echo "Failed to connect to $ssh"
+            } &
+          done
+          wait
