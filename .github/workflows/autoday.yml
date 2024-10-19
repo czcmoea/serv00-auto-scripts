@@ -1,3 +1,10 @@
+name: AutoDay
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '7 7 * * *'
+
 jobs:
   execute-commands:
     runs-on: ubuntu-latest
@@ -14,7 +21,7 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
-
+            
             # Execute the command and capture the output
             output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
             echo "$output" | tee -a output.log
