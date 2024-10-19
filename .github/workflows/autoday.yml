@@ -1,0 +1,26 @@
+name: AutoDay
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '7 7 * * *'
+
+jobs:
+  execute-commands:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSHPass
+        run: sudo apt-get update && sudo apt-get install -y sshpass jq
+
+      - name: Execute command on remote servers
+        env:
+          SERVERS_JSON: ${{ secrets.SSH_JSON }}
+        run: |
+          echo "$SERVERS_JSON" | jq -c '.[]' | while read -r server; do
+            username=$(echo "$server" | jq -r '.username')
+            password=$(echo "$server" | jq -r '.password')
+            ssh=$(echo "$server" | jq -r '.ssh')
+            cmd=$(echo "$server" | jq -r '.cmd')
+            sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" '$cmd' &
+          done
+          wait
