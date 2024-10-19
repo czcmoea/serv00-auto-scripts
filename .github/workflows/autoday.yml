@@ -29,7 +29,7 @@ jobs:
             echo "Output from $ssh:" >> output.log  # 写入日志
             echo "$output" >> output.log
             
-            sleep 5  # 等待5秒，增加延迟
+            sleep 1  # 等待5秒，增加延迟
           done
       
           cat output.log  # 在循环外部一次性打印
