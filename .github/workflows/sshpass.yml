@@ -9,35 +9,33 @@ jobs:
   execute-commands:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up SSHPass and jq
+      - name: Set up SSHPass
         run: sudo apt-get update && sudo apt-get install -y sshpass jq
 
-      - name: Generate SSH Commands
-        id: generate-ssh-commands
+      - name: Execute command on remote servers
+        env:
+          SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
-          echo "#!/bin/bash" > ssh_commands.sh
-          
           echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
 
-            echo "echo \"Executing command on $username@$ssh...\"" >> ssh_commands.sh
-            echo "output=\$(sshpass -p '$password' ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR '$username@$ssh' 'pwd' 2>&1)" >> ssh_commands.sh
-            echo "echo \"\${output}\"" >> ssh_commands.sh
-            echo "if [[ \${?} -ne 0 ]]; then" >> ssh_commands.sh
-            echo "  echo '❌ Error executing command on $username@$ssh'" >> ssh_commands.sh
-            echo "else" >> ssh_commands.sh
-            echo "  echo '✅ Successfully executed command on $username@$ssh'" >> ssh_commands.sh
-            echo "fi" >> ssh_commands.sh
-            echo "sleep 5" >> ssh_commands.sh
+            echo "Executing command on $username@$ssh..."
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
+
+            # 输出命令结果
+            echo "$output"
+
+            # 检查命令是否成功
+            if [[ $? -ne 0 ]]; then
+              echo "❌ Error executing command on $username@$ssh"
+            else
+              echo "✅ Successfully executed command on $username@$ssh"
+            fi
+            
+            echo "Waiting for 5 seconds before proceeding to the next server..."
+            sleep 5
           done
 
-          chmod +x ssh_commands.sh
-
-      - name: Execute SSH Commands
-        run: |
-          ./ssh_commands.sh
-
-      - name: Final Message
-        run: echo "All commands have been executed."
+          echo "All commands have been executed."
