@@ -9,34 +9,35 @@ jobs:
   execute-commands:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up SSHPass
+      - name: Set up SSHPass and jq
         run: sudo apt-get update && sudo apt-get install -y sshpass jq
 
-      - name: Execute command on remote servers
-        env:
-          SERVERS_JSON: ${{ secrets.SSH_JSON }}
+      - name: Generate SSH Commands
+        id: generate-ssh-commands
         run: |
+          echo "#!/bin/bash" > ssh_commands.sh
+          
           echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
 
-            echo "Executing command on $username@$ssh..."
-            sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" > output.log 2>&1 &
-            pid=$!
-
-            # Check if the command is running in the background
-            if [[ $? -ne 0 ]]; then
-              echo "❌ Error starting command on $username@$ssh"
-            else
-              echo "✅ Successfully started command on $username@$ssh (PID: $pid)"
-            fi
-            
-            echo "Waiting for 5 seconds before proceeding to the next server..."
-            sleep 5
+            echo "echo \"Executing command on $username@$ssh...\"" >> ssh_commands.sh
+            echo "output=\$(sshpass -p '$password' ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR '$username@$ssh' 'pwd' 2>&1)" >> ssh_commands.sh
+            echo "echo \"\${output}\"" >> ssh_commands.sh
+            echo "if [[ \${?} -ne 0 ]]; then" >> ssh_commands.sh
+            echo "  echo '❌ Error executing command on $username@$ssh'" >> ssh_commands.sh
+            echo "else" >> ssh_commands.sh
+            echo "  echo '✅ Successfully executed command on $username@$ssh'" >> ssh_commands.sh
+            echo "fi" >> ssh_commands.sh
+            echo "sleep 5" >> ssh_commands.sh
           done
 
-          # Wait for all background jobs to finish
-          wait
+          chmod +x ssh_commands.sh
 
-          echo "All commands have been executed."
+      - name: Execute SSH Commands
+        run: |
+          ./ssh_commands.sh
+
+      - name: Final Message
+        run: echo "All commands have been executed."
