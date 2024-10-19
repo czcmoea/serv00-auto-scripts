@@ -18,11 +18,11 @@ jobs:
         run: |
           # 解析 JSON 字符串并执行命令
           echo $SERVERS_JSON | jq -c '.[]' | while IFS= read -r server; do
-            hostname=$(echo "$server" | jq -r '.hostname')
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
+            ssh=$(echo "$server" | jq -r '.ssh')
   
             echo "Connecting to $hostname as $username"
-            sshpass -p $password ssh -o StrictHostKeyChecking=no $username@$hostname 'pwd'
+            sshpass -p $password ssh -o StrictHostKeyChecking=no $username@$ssh 'pwd'
           done
 
