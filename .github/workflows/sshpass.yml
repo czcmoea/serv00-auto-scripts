@@ -1,7 +1,7 @@
 name: SSH
 
 on:
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch: # 手动触发工作流
   schedule:
     - cron: '7 5 */30 * *'
 
@@ -21,10 +21,9 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             echo "Connecting to $ssh as $username"
-            {
-              sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd' && \
-              echo "Successfully connected to $ssh" || \
+            if sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'; then
+              echo "Successfully connected to $ssh"
+            else
               echo "Failed to connect to $ssh"
-            } &
+            fi
           done
-          wait
