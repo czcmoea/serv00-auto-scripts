@@ -24,13 +24,12 @@ jobs:
             cmd=$(echo "$server" | jq -r '.cmd')
             
             echo "Executing command on $ssh: $cmd" >> output.log  # 写入日志
-            {
-              output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
-              echo "Output from $ssh:" >> output.log
-              echo "$output" >> output.log
-            } &  # 在后台执行
-      
-            wait  # 等待当前命令完成
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
+            
+            echo "Output from $ssh:" >> output.log  # 写入日志
+            echo "$output" >> output.log
+            
+            sleep 5  # 等待5秒，增加延迟
           done
       
           cat output.log  # 在循环外部一次性打印
