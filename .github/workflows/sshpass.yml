@@ -16,6 +16,7 @@ jobs:
         env:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
+          echo "" > output.log  # Clear or create output.log
           echo "$SERVERS_JSON" | jq -c '.[]' | while read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
@@ -23,19 +24,12 @@ jobs:
             echo "Executing command on $ssh: $cmd" >> output.log  # 写入日志
 
             # 使用 sshpass 执行命令，并捕获输出
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "pwd" 2>&1)
       
-            # 输出结果到日志
-            echo "Output from $ssh:" >> output.log
+            echo "Output from $ssh:" >> output.log  # Log output
             echo "$output" >> output.log
-      
-            # 检查命令是否成功
-            if [[ $? -ne 0 ]]; then
-              echo "Error executing command on $ssh" >> output.log
-            fi
-      
-            # 添加延迟
-            sleep 2  # 等待5秒，增加延迟
+            
+            sleep 2  # Wait 2 seconds for delay
           done
       
           cat output.log  # 在循环外部一次性打印
