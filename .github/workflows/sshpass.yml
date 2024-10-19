@@ -25,5 +25,7 @@ jobs:
               echo "Successfully connected to $ssh" || \
               echo "Failed to connect to $ssh"
             } &
+            wait
+            sleep 2
           done
           wait
