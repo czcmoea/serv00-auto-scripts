@@ -1,3 +1,10 @@
+name: AutoDay
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '7 7 * * *'
+
 jobs:
   execute-commands:
     runs-on: ubuntu-latest
@@ -14,24 +21,13 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
-
-            # Create a temporary file for the output
-            temp_file=$(mktemp)
-
+            
+            echo "$output" | tee -a output.log
             {
-              # Execute the command and capture output
+              # Execute the command and log output
               output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
-              echo "Output from $ssh:" >> "$temp_file"
-              echo "$output" >> "$temp_file"
+              echo "Output from $ssh:" >> output.log
+              echo "$output" >> output.log
             } &
-
-            # Store the temp file name for later use
-            temp_files+=("$temp_file")
           done
           wait
-
-          # Consolidate all outputs into output.log
-          for file in "${temp_files[@]}"; do
-            cat "$file" >> output.log
-            rm "$file" # Clean up the temporary file
-          done
