@@ -22,7 +22,7 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
-            
+            echo "Processing server: $ssh"
             echo "Processing server: $ssh" >> output.log  # Debug log
 
             {
