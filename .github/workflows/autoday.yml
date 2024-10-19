@@ -22,7 +22,11 @@ jobs:
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
             
-            # Execute the command and capture the output
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
-            echo "$output" | tee -a output.log
+            {
+              # Execute the command and log output
+              output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
+              echo "Output from $ssh:" >> output.log
+              echo "$output" >> output.log
+            } &
           done
+          wait
