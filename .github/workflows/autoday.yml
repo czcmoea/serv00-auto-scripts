@@ -22,7 +22,8 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
-
+            
+            echo "$server"
             sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'echo Hello'
           done
           wait
