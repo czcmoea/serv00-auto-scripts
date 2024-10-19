@@ -22,11 +22,11 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
   
-            echo "Connecting to $hostname as $username"
+            echo "Connecting to $ssh as $username"
             if sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'; then
-              echo "Successfully connected to $hostname"
+              echo "Successfully connected to $ssh"
             else
-              echo "Failed to connect to $hostname"
+              echo "Failed to connect to $ssh"
             fi
-          done < <(echo $SERVERS_JSON | jq -c '.[]')
+          done < <(echo "$SERVERS_JSON" | jq -c '.[]')
 
