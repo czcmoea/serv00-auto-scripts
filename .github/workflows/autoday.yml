@@ -24,12 +24,12 @@ jobs:
             cmd=$(echo "$server" | jq -r '.cmd')
             
             echo "Executing command on $ssh: $cmd" >> output.log  # Log execution
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
+            output=$(sshpass -p "$password" ssh -n -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
             
             echo "Output from $ssh:" >> output.log  # Log output
             echo "$output" >> output.log
             
-            sleep 1  # Wait 1 seconds for delay
+            sleep 2  # Wait 2 seconds for delay
           done
       
           cat output.log  # Print output log
