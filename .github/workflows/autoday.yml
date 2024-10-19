@@ -1,3 +1,17 @@
+name: AutoDay
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '7 7 * * *'
+
+jobs:
+  execute-commands:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSHPass
+        run: sudo apt-get update && sudo apt-get install -y sshpass jq
+
       - name: Execute command on remote servers
         env:
           DAY_JSON: ${{ secrets.DAY_JSON }}
