@@ -21,6 +21,10 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
-            sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" '$cmd' 2>&1 | tee output.log &
+
+            # Use a subshell to capture the output
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
+
+            # Log the output
+            echo "$output" | tee -a output.log
           done
-          wait
