@@ -35,4 +35,4 @@ jobs:
           chmod +x sshpass.sh
 
       - name: SSH
-        run: ./sshpass.sh
+        run: cat ./sshpass.sh
