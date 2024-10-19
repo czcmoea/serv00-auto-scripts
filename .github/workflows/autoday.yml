@@ -14,9 +14,9 @@ jobs:
 
       - name: Execute command on remote servers
         env:
-          SERVERS_JSON: ${{ secrets.SSH_JSON }}
+          DAY_JSON: ${{ secrets.DAY_JSON }}
         run: |
-          echo "$SERVERS_JSON" | jq -c '.[]' | while read -r server; do
+          echo "$DAY_JSON" | jq -c '.[]' | while read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
