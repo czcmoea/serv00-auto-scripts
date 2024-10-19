@@ -21,12 +21,13 @@ jobs:
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
-  
+            # 你的处理逻辑
+            echo "$server"
             echo "Connecting to $ssh as $username"
-            if sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'; then
-              echo "Successfully connected to $ssh"
-            else
-              echo "Failed to connect to $ssh"
-            fi
+            # if sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'; then
+            #   echo "Successfully connected to $ssh"
+            # else
+            #   echo "Failed to connect to $ssh"
+            # fi
           done < <(echo "$SERVERS_JSON" | jq -c '.[]')
 
