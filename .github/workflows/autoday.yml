@@ -31,7 +31,6 @@ jobs:
             } &  # 在后台执行
       
             wait  # 等待当前命令完成
-            sleep 2  # 等待5秒，增加延迟
           done
       
           cat output.log  # 在循环外部一次性打印
