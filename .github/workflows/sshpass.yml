@@ -23,6 +23,10 @@ jobs:
             ssh=$(echo "$server" | jq -r '.ssh')
   
             echo "Connecting to $hostname as $username"
-            sshpass -p $password ssh -o StrictHostKeyChecking=no $username@$ssh 'pwd'
+            if sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'pwd'; then
+              echo "Successfully connected to $hostname"
+            else
+              echo "Failed to connect to $hostname"
+            fi
           done < <(echo $SERVERS_JSON | jq -c '.[]')
 
