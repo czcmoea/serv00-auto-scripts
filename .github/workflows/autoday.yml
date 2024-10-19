@@ -3,7 +3,7 @@ name: AutoDay
 on:
   workflow_dispatch: # Manual trigger
   schedule:
-    - cron: '7 7 * * *'
+    - cron: '6 6 * * *'
 
 jobs:
   execute-commands:
@@ -16,14 +16,15 @@ jobs:
         env:
           DAY_JSON: ${{ secrets.DAY_JSON }}
         run: |
-          echo "" > output.log  # 清空或创建 output.log
           echo "$DAY_JSON" | jq -c '.[]' | while read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
             
-            echo "$server"
-            sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" 'echo Hello'
+            echo "Executing command on $ssh: $cmd"  # 调试输出
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
+            
+            echo "Output from $ssh:"  # 输出日志
+            echo "$output"
           done
-          wait
