@@ -26,5 +26,5 @@ jobs:
             output=$(sshpass -p "$password" ssh -n -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
             echo "$output"
             
-            sleep 2  # Wait 2 seconds for delay
+            sleep 5  # Wait 5 seconds for delay
           done
