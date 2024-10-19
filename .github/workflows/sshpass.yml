@@ -21,10 +21,19 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
 
-            echo "Executing command on $username@$ssh..."
+            echo "Attempting to connect to $username@$ssh..."
+            set +e  # 允许后续命令出错时继续执行
             output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
+            exit_status=$?  # 捕获退出状态
+            set -e  # 恢复默认行为，遇到错误时停止执行
 
             echo "$output"
+
+            if [[ $exit_status -ne 0 ]]; then
+              echo "❌ Error executing command on $username@$ssh: $output"
+            else
+              echo "✅ Successfully executed command on $username@$ssh"
+            fi
             echo "Waiting for 5 seconds before proceeding to the next server..."
             sleep 2
           done
