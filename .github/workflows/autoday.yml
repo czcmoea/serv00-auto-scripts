@@ -23,6 +23,8 @@ jobs:
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
             
+            echo "Processing server: $ssh" >> output.log  # Debug log
+
             {
               echo "Executing command on $ssh at $(date): $cmd" >> output.log
               output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
