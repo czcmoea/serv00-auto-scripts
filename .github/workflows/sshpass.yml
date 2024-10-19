@@ -17,25 +17,22 @@ jobs:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
           echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
-            # 提取服务器信息
+            echo "Processing server: $server"  # 增加调试输出
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
 
-            echo "Executing command on $username@$ssh"
+            echo "Executing command on $username@$ssh..."
             output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
 
-            # 输出命令结果
             echo "$output"
 
-            # 检查命令是否成功
             if [[ $? -ne 0 ]]; then
-              echo "Error executing command on $username@$ssh"
+              echo "❌ Error executing command on $username@$ssh"
             else
-              echo "Successfully executed command on $username@$ssh"
+              echo "✅ Successfully executed command on $username@$ssh"
             fi
             
-            # 强制等待 5 秒以避免对服务器的过快请求
             echo "Waiting for 5 seconds before proceeding to the next server..."
             sleep 5
           done
