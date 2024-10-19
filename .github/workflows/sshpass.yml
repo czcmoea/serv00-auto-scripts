@@ -16,8 +16,8 @@ jobs:
         env:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
+          sleep 10
           echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
-            echo "Processing server: $server"  # 增加调试输出
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
@@ -34,7 +34,7 @@ jobs:
             fi
             
             echo "Waiting for 5 seconds before proceeding to the next server..."
-            sleep 5
+            sleep 2
           done
 
           echo "All commands have been executed."
