@@ -10,16 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up SSHPass
-        run: sudo apt-get update && sudo apt-get install -y sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass jq
 
       - name: Execute command on remote servers
         env:
-          SSH_JSON: ${{ secrets.SSH_JSON }}
+          SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
-          while IFS= read -r account; do
-            username=$(echo "$account" | jq -r '.username')
-            password=$(echo "$account" | jq -r '.password')
-            ssh=$(echo "$account" | jq -r '.ssh')
-            sshpass -p '$password' ssh -o StrictHostKeyChecking=no '$username@$ssh' 'pwd'
-          done < <(jq -c '.[]' $SSH_JSON)
+          # 解析 JSON 字符串并执行命令
+          echo $SERVERS_JSON | jq -c '.[]' | while IFS= read -r server; do
+            hostname=$(echo "$server" | jq -r '.hostname')
+            username=$(echo "$server" | jq -r '.username')
+            password=$(echo "$server" | jq -r '.password')
+  
+            echo "Connecting to $hostname as $username"
+            sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$hostname" 'pwd'
+          done
 
