@@ -23,6 +23,6 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
   
             echo "Connecting to $hostname as $username"
-            sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$hostname" 'pwd'
+            sshpass -p $password ssh -o StrictHostKeyChecking=no $username@$hostname 'pwd'
           done
 
