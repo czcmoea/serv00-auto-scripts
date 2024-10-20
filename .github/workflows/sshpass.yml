@@ -12,30 +12,39 @@ jobs:
       - name: 安装 sshpass 和 jq
         run: sudo apt-get update && sudo apt-get install -y sshpass jq
 
-      - name: 执行远程服务器命令
+      - name: 输出服务器配置
+        id: output_servers
         env:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
-          echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
-            username=$(echo "$server" | jq -r '.username')
-            password=$(echo "$server" | jq -r '.password')
-            ssh_host=$(echo "$server" | jq -r '.ssh')
+          echo "服务器配置内容："
+          echo "$SERVERS_JSON" | jq .
+          echo "::set-output name=servers::$SERVERS_JSON"
 
-            echo "在 $username@$ssh_host 上执行命令..."
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh_host" "pwd" 2>&1)
+  run_commands:
+    needs: execute-commands
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        server: ${{ fromJson(needs.execute-commands.outputs.servers) }}
+    steps:
+      - name: 执行远程服务器命令
+        run: |
+          username=$(echo "${{ matrix.server }}" | jq -r '.username')
+          password=$(echo "${{ matrix.server }}" | jq -r '.password')
+          ssh_host=$(echo "${{ matrix.server }}" | jq -r '.ssh')
 
-            # 输出命令结果
-            echo "$output"
+          echo "正在在服务器 $ssh_host 上以用户 $username 执行命令..."
+          output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh_host" "pwd" 2>&1)
 
-            # 检查命令是否成功
-            if [[ $? -ne 0 ]]; then
-              echo "❌ 执行命令时出错：$username@$ssh_host"
-            else
-              echo "✅ 成功在 $username@$ssh_host 上执行命令"
-            fi
-            
-            echo "在继续下一个服务器之前等待 5 秒..."
-            sleep 5
-          done
+          # 输出命令结果
+          echo "$output"
+
+          # 检查命令是否成功
+          if [[ $? -ne 0 ]]; then
+            echo "❌ 执行命令时出错：$username@$ssh_host"
+          else
+            echo "✅ 成功在 $username@$ssh_host 上执行命令"
+          fi
 
           echo "所有命令已执行完成。"
