@@ -22,18 +22,6 @@ jobs:
             ssh=$(echo "$server" | jq -r '.ssh')
 
             echo "Executing command on $username@$ssh..."
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
-
-            # 输出命令结果
-            echo "$output"
-
-            # 检查命令是否成功
-            if [[ $? -ne 0 ]]; then
-              echo "❌ Error executing command on $username@$ssh"
-            else
-              echo "✅ Successfully executed command on $username@$ssh"
-            fi
-            
             echo "Waiting for 5 seconds before proceeding to the next server..."
             sleep 5
           done
