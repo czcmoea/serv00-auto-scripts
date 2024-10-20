@@ -1,32 +1,41 @@
 name: SSH
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger
   schedule:
-    - cron: '15 2 1 * *'  # 每月的 2:15 AM 执行
+    - cron: '7 5 1 */2 *'
 
 jobs:
-  ssh-job:
+  execute-commands:
     runs-on: ubuntu-latest
-    env:
-      pythonLocation: '/opt/hostedtoolcache/Python/3.12.7/x64'
-      LD_LIBRARY_PATH: '/opt/hostedtoolcache/Python/3.12.7/x64/lib'
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install jq and sshpass
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq sshpass
+      - name: Set up SSHPass
+        run: sudo apt-get update && sudo apt-get install -y sshpass jq
 
       - name: Execute command on remote servers
+        env:
+          SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
-          echo "${{ secrets.SSH_JSON }}" | jq -c '.[]' | while IFS= read -r server; do
-            username=$(echo $server | jq -r '.username')
-            password=$(echo $server | jq -r '.password')
-            ssh_host=$(echo $server | jq -r '.ssh')
-            echo "Connecting to $ssh_host as $username"
-            sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh_host" "pwd"
+          echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
+            username=$(echo "$server" | jq -r '.username')
+            password=$(echo "$server" | jq -r '.password')
+            ssh=$(echo "$server" | jq -r '.ssh')
+
+            echo "Executing command on $username@$ssh..."
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
+
+            # 输出命令结果
+            echo "$output"
+
+            # 检查命令是否成功
+            if [[ $? -ne 0 ]]; then
+              echo "❌ Error executing command on $username@$ssh"
+            else
+              echo "✅ Successfully executed command on $username@$ssh"
+            fi
+            
+            echo "Waiting for 5 seconds before proceeding to the next server..."
+            sleep 5
           done
+
+          echo "All commands have been executed."
