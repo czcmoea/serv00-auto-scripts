@@ -1,21 +1,20 @@
 name: SSH
+
 on:
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
   schedule:
     - cron: '15 2 1 * *'  # 每月的 2:15 AM 执行
 
 jobs:
   ssh-job:
     runs-on: ubuntu-latest
+    env:
+      pythonLocation: '/opt/hostedtoolcache/Python/3.12.7/x64'
+      LD_LIBRARY_PATH: '/opt/hostedtoolcache/Python/3.12.7/x64/lib'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
 
       - name: Install jq and sshpass
         run: |
