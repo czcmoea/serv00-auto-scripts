@@ -1,9 +1,8 @@
 name: SSH
-
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:  # 允许手动触发
+  schedule:
+    - cron: '15 2 1 * *'  # 每月的 2:15 AM 执行
 
 jobs:
   ssh-job:
