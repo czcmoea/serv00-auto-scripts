@@ -1,50 +1,34 @@
 name: SSH
 
 on:
-  workflow_dispatch: # 手动触发
-  schedule:
-    - cron: '7 5 1 */2 *'
+  push:
+    branches:
+      - main
 
 jobs:
-  execute-commands:
+  ssh-job:
     runs-on: ubuntu-latest
-    outputs:
-      servers: ${{ steps.output_servers.outputs.servers }}
+
     steps:
-      - name: 安装 sshpass 和 jq
-        run: sudo apt-get update && sudo apt-get install -y sshpass jq
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: 输出服务器配置
-        id: output_servers
-        env:
-          SERVERS_JSON: ${{ secrets.SSH_JSON }}
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install jq and sshpass
         run: |
-          echo "服务器配置内容："
-          echo "$SERVERS_JSON" | jq .
-          echo "::set-output name=servers::$SERVERS_JSON"
+          sudo apt-get update
+          sudo apt-get install -y jq sshpass
 
-  run_commands:
-    needs: execute-commands
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        server: ${{ fromJson(needs.execute-commands.outputs.servers) }}
-    steps:
-      - name: 执行远程服务器命令
+      - name: Execute command on remote servers
         run: |
-          username=$(echo "${{ matrix.server }}" | jq -r '.username')
-          password=$(echo "${{ matrix.server }}" | jq -r '.password')
-          ssh_host=$(echo "${{ matrix.server }}" | jq -r '.ssh')
-
-          echo "正在在服务器 $ssh_host 上以用户 $username 执行命令..."
-          output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh_host" "pwd" 2>&1)
-
-          # 输出命令结果
-          echo "$output"
-
-          # 检查命令是否成功
-          if [[ $? -ne 0 ]]; then
-            echo "❌ 执行命令时出错：$username@$ssh_host"
-          else
-            echo "✅ 成功在 $username@$ssh_host 上执行命令"
-          fi
+          echo "${{ secrets.SSH_JSON }}" | jq -c '.[]' | while IFS= read -r server; do
+            username=$(echo $server | jq -r '.username')
+            password=$(echo $server | jq -r '.password')
+            ssh_host=$(echo $server | jq -r '.ssh')
+            echo "Connecting to $ssh_host as $username"
+            sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$ssh_host" "pwd"
+          done
