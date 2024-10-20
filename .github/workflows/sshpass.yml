@@ -8,6 +8,8 @@ on:
 jobs:
   execute-commands:
     runs-on: ubuntu-latest
+    outputs:
+      servers: ${{ steps.output_servers.outputs.servers }}
     steps:
       - name: 安装 sshpass 和 jq
         run: sudo apt-get update && sudo apt-get install -y sshpass jq
@@ -19,14 +21,14 @@ jobs:
         run: |
           echo "服务器配置内容："
           echo "$SERVERS_JSON" | jq .
-          echo "servers=$SERVERS_JSON" >> $GITHUB_ENV
+          echo "::set-output name=servers::$SERVERS_JSON"
 
   run_commands:
     needs: execute-commands
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        server: ${{ fromJson(env.servers) }}
+        server: ${{ fromJson(needs.execute-commands.outputs.servers) }}
     steps:
       - name: 执行远程服务器命令
         run: |
