@@ -3,14 +3,14 @@ name: AutoDay
 on:
   workflow_dispatch: # Manual trigger
   schedule:
-    - cron: '6 6 * * *'
+    - cron: '6 22 * * *'
 
 jobs:
   execute-commands:
     runs-on: ubuntu-latest
     steps:
       - name: Set up SSHPass
-        run: sudo apt-get update && sudo apt-get install -y sshpass jq
+        run: sudo apt-get update && sudo apt-get install -y sshpass jq screen
 
       - name: Execute command on remote servers
         env:
@@ -22,9 +22,20 @@ jobs:
             ssh=$(echo "$server" | jq -r '.ssh')
             cmd=$(echo "$server" | jq -r '.cmd')
             
-            echo "Executing command on $username@$ssh: $cmd"
-            output=$(sshpass -p "$password" ssh -n -o StrictHostKeyChecking=no "$username@$ssh" "$cmd" 2>&1)
-            echo "$output"
-            
-            sleep 5  # Wait 5 seconds for delay
+            echo "Starting screen session for $username@$ssh..."
+            screen -dmS "ssh_session_$ssh" bash -c "echo 'Executing command on $username@$ssh: $cmd' && sshpass -p \"$password\" ssh -n -o StrictHostKeyChecking=no \"$username@$ssh\" \"$cmd\" > screen_log_$ssh.log 2>&1"
+
+            # Wait for a few seconds to allow the command to run
+            echo "Waiting for command to finish on $username@$ssh..."
+            sleep 5  # Adjust as necessary based on expected command duration
+
+            # Output the log from the screen session
+            echo "Log for $username@$ssh:"
+            cat screen_log_$ssh.log || echo "❌ Failed to retrieve log for $username@$ssh"
+
+            echo "✅ Successfully executed command on $username@$ssh"
+            echo "Waiting for 5 seconds before proceeding to the next server..."
+            sleep 5
           done
+
+          echo "All commands have been executed."
