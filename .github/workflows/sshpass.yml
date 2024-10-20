@@ -3,7 +3,7 @@ name: SSH
 on:
   workflow_dispatch: # Manual trigger
   schedule:
-    - cron: '7 5 1 */2 *'
+    - cron: '7 5 1 */2 *'  # Every 2 months on the 1st day at 5:07 AM
 
 jobs:
   execute-commands:
@@ -16,25 +16,35 @@ jobs:
         env:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
+          # 定义命令数组
+          commands=()
           echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
 
-            echo "Executing command on $username@$ssh..."
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd; sleep 5" 2>&1)
+            # 记录要执行的命令
+            command="sshpass -p \"$password\" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=30 -o ServerAliveCountMax=2 \"$username@$ssh\" \"pwd\""
+            commands+=("$command")
+          done
+
+          # 循环外执行所有命令
+          for cmd in "${commands[@]}"; do
+            echo "Executing command: $cmd"
+            output=$(eval "$cmd" 2>&1)
 
             # 输出命令结果
             echo "$output"
 
             # 检查命令是否成功
-            if [[ $? -ne 0 ]]; then
-              echo "❌ Error executing command on $username@$ssh"
+            if [ $? -ne 0 ]; then
+              echo "❌ Error executing command: $cmd"
             else
-              echo "✅ Successfully executed command on $username@$ssh"
+              echo "✅ Successfully executed command: $cmd"
             fi
             
-            echo "Waiting for 5 seconds before proceeding to the next server..."
+            echo "Waiting for 5 seconds before proceeding to the next command..."
+            sleep 5  # 确保有足够的等待时间
           done
 
           echo "All commands have been executed."
