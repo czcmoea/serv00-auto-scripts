@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up SSHPass
-        run: sudo apt-get update && sudo apt-get install -y sshpass jq
+        run: sudo apt-get update && sudo apt-get install -y sshpass jq screen
 
       - name: Execute command on remote servers
         env:
@@ -21,19 +21,16 @@ jobs:
             password=$(echo "$server" | jq -r '.password')
             ssh=$(echo "$server" | jq -r '.ssh')
 
-            echo "Executing command on $username@$ssh..."
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
+            echo "Starting a new screen session to execute command on $username@$ssh..."
+            screen -dmS "ssh_session_$ssh" bash -c "
+              output=\$(sshpass -p \"$password\" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR \"$username@$ssh\" \"pwd\" 2>&1);
+              if [[ \$? -ne 0 ]]; then
+                echo \"❌ Error executing command on $username@$ssh: \$output\" >> /tmp/ssh_errors.log;
+              else
+                echo \"✅ Successfully executed command on $username@$ssh: \$output\" >> /tmp/ssh_success.log;
+              fi
+            "
 
-            # 输出命令结果
-            echo "$output"
-
-            # 检查命令是否成功
-            if [[ $? -ne 0 ]]; then
-              echo "❌ Error executing command on $username@$ssh"
-            else
-              echo "✅ Successfully executed command on $username@$ssh"
-            fi
-            
             echo "Waiting for 5 seconds before proceeding to the next server..."
             sleep 5
           done
