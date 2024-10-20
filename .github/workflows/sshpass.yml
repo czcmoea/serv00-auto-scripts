@@ -1,7 +1,7 @@
 name: SSH
 
 on:
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch: # 手动触发
   schedule:
     - cron: '7 5 1 */2 *'
 
@@ -9,21 +9,33 @@ jobs:
   execute-commands:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up SSHPass
+      - name: 安装 sshpass 和 jq
         run: sudo apt-get update && sudo apt-get install -y sshpass jq
 
-      - name: Execute command on remote servers
+      - name: 执行远程服务器命令
         env:
           SERVERS_JSON: ${{ secrets.SSH_JSON }}
         run: |
           echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
-            ssh=$(echo "$server" | jq -r '.ssh')
+            ssh_host=$(echo "$server" | jq -r '.ssh')
 
-            echo "Executing command on $username@$ssh..."
-            echo "Waiting for 5 seconds before proceeding to the next server..."
+            echo "在 $username@$ssh_host 上执行命令..."
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh_host" "pwd" 2>&1)
+
+            # 输出命令结果
+            echo "$output"
+
+            # 检查命令是否成功
+            if [[ $? -ne 0 ]]; then
+              echo "❌ 执行命令时出错：$username@$ssh_host"
+            else
+              echo "✅ 成功在 $username@$ssh_host 上执行命令"
+            fi
+            
+            echo "在继续下一个服务器之前等待 5 秒..."
             sleep 5
           done
 
-          echo "All commands have been executed."
+          echo "所有命令已执行完成。"
