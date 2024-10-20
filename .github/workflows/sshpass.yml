@@ -22,7 +22,7 @@ jobs:
             ssh=$(echo "$server" | jq -r '.ssh')
 
             echo "Executing command on $username@$ssh..."
-            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd" 2>&1)
+            output=$(sshpass -p "$password" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR "$username@$ssh" "pwd; sleep 5" 2>&1)
 
             # 输出命令结果
             echo "$output"
@@ -35,7 +35,6 @@ jobs:
             fi
             
             echo "Waiting for 5 seconds before proceeding to the next server..."
-            sleep 5
           done
 
           echo "All commands have been executed."
