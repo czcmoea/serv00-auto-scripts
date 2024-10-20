@@ -19,14 +19,14 @@ jobs:
         run: |
           echo "服务器配置内容："
           echo "$SERVERS_JSON" | jq .
-          echo "::set-output name=servers::$SERVERS_JSON"
+          echo "servers=$SERVERS_JSON" >> $GITHUB_ENV
 
   run_commands:
     needs: execute-commands
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        server: ${{ fromJson(needs.execute-commands.outputs.servers) }}
+        server: ${{ fromJson(env.servers) }}
     steps:
       - name: 执行远程服务器命令
         run: |
@@ -46,5 +46,3 @@ jobs:
           else
             echo "✅ 成功在 $username@$ssh_host 上执行命令"
           fi
-
-          echo "所有命令已执行完成。"
