@@ -3,7 +3,7 @@ name: SSH
 on:
   workflow_dispatch: # Manual trigger
   schedule:
-    - cron: '7 21 3 * *'
+    - cron: '7 21 */10 * *'
 
 jobs:
   execute-commands:
@@ -14,25 +14,25 @@ jobs:
 
       - name: Execute command on remote servers
         env:
-          SERVERS_JSON: ${{ secrets.SSH_JSON }}
+          ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
         run: |
-          echo "$SERVERS_JSON" | jq -c '.[]' | while IFS= read -r server; do
+          echo "$ACCOUNTS_JSON" | jq -c '.[]' | while IFS= read -r server; do
             username=$(echo "$server" | jq -r '.username')
             password=$(echo "$server" | jq -r '.password')
-            ssh=$(echo "$server" | jq -r '.ssh')
+            panelnum=$(echo "$server" | jq -r '.panelnum')
 
-            echo "Starting screen session for $username@$ssh..."
-            screen -dmS "ssh_session_$ssh" bash -c "echo 'Executing command on $username@$ssh...' && sshpass -p \"$password\" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR \"$username@$ssh\" 'pwd' > screen_log_$ssh.log 2>&1"
+            echo "Starting screen session for $username@$panelnum..."
+            screen -dmS "ssh_session_$panelnum" bash -c "echo 'Executing command on $username@$panelnum...' && sshpass -p \"$password\" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR \"$username@s$panelnum.serv00.com\" 'pwd' > screen_log_$panelnum.log 2>&1"
 
             # Wait for the command to finish and log output
-            echo "Waiting for command to finish on $username@$ssh..."
+            echo "Waiting for command to finish on $username@$panelnum..."
             sleep 5  # Adjust this as necessary based on expected command duration
 
             # Output the log from the screen session
-            echo "Log for $username@$ssh:"
-            cat screen_log_$ssh.log || echo "❌ Failed to retrieve log for $username@$ssh"
+            echo "Log for $username@$panelnum:"
+            cat screen_log_$panelnum.log || echo "❌ Failed to retrieve log for $username@$panelnum"
 
-            echo "✅ Successfully executed command on $username@$ssh"
+            echo "✅ Successfully executed command on $username@$panelnum"
             echo "Waiting for 5 seconds before proceeding to the next server..."
             sleep 5
           done
